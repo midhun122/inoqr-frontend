@@ -1,32 +1,77 @@
-# React + TypeScript + Vite
+# INOQR
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+INOQR is a modern QR code generation platform currently under active development.
 
-Currently, two official plugins are available:
+The project aims to provide a clean and simple experience for creating, customizing, and managing QR codes.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> **Development Status:** 🚧 INOQR is currently under active development. Features, UI, and project structure may change frequently.
 
-## React Compiler
+## Current Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The frontend is actively being designed and developed.
 
-## Expanding the Oxlint configuration
+Current areas of work include:
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+* Landing page and responsive UI
+* Static QR generation
+* QR customization and preview
+* User authentication
+* My QRs dashboard
+* Dynamic QR integration
+* Frontend–backend integration
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Some features may be incomplete or unavailable in the current version.
+
+## Tech Stack
+
+The technology stack is evolving as development continues.
+
+* React
+* Vite
+* JavaScript / TypeScript
+* HTML
+* CSS
+
+Additional technologies and services will be documented as they are integrated.
+
+## Running Locally
+
+Clone the repository:
+
+```bash
+git clone https://github.com/midhun122/inoqr-frontend.git
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Enter the project directory:
+
+```bash
+cd inoqr-frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+## Project Status
+
+INOQR is **not production-ready**.
+
+The repository currently represents the development version of the frontend. Breaking changes, incomplete components, temporary implementations, and UI changes should be expected.
+
+Detailed technical and frontend documentation will be added as the project becomes more stable.
+
+## Contributing
+
+The project is currently under active development. Contribution guidelines will be added at a later stage.
+
+## License
+
+License information will be added before the project's public release.

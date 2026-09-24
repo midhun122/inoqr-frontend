@@ -1,0 +1,204 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=Roboto+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * INOQR design tokens.
+ * Colors are RGB triplets so Tailwind opacity modifiers (bg-ink/90,
+ * text-canvas/70, border-hairline …) keep working in both themes.
+ * Every `ink / canvas / field / hairline …` utility flips automatically
+ * when `.dark` lands on <html> — no per-page dark: classes needed for
+ * the base surfaces.
+ */
+:root {
+  color-scheme: light;
+
+  --ink: 20 20 20;
+  --ink-soft: 38 38 38;
+  --muted: 112 112 112;
+  --faint: 173 173 173;
+  --canvas: 255 255 255;
+  --canvas-soft: 243 243 243;
+  --field: 240 240 240;
+  --hairline: 224 224 224;
+  --accent: 0 102 255;
+  --accent-deep: 0 79 204;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --btn-h: 48px;
+  --btn-h-sm: 40px;
+  --input-h: 48px;
+
+  --shell-w: 1160px;
+
+  /* Three-voice type system (font style only): serif display for emotive
+     statements, sans for UI, mono for uppercase technical labels. */
+  --font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --motion-fast: 180ms;
+  --motion-base: 320ms;
+  --motion-slow: 600ms;
+}
+
+/* Flips on EITHER hook so a single DOM-write failure mode can't strand the theme. */
+.dark,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink: 244 244 245;
+  --ink-soft: 228 228 231;
+  --muted: 161 161 170;
+  --faint: 113 113 122;
+  --canvas: 9 9 11;
+  --canvas-soft: 20 20 23;
+  --field: 28 28 33;
+  --hairline: 42 42 48;
+  --accent: 96 165 250;
+  --accent-deep: 147 197 253;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Smooth theme crossfade for surfaces that don't set their own transition.
+   Tailwind transition utilities win where present (higher specificity). */
+*,
+::before,
+::after {
+  transition-property: background-color, border-color;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  background: rgb(var(--canvas));
+  color: rgb(var(--ink));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition:
+    background-color 300ms ease,
+    color 300ms ease;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.22);
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full px-5 md:px-8;
+    max-width: var(--shell-w);
+  }
+  .card {
+    @apply rounded-xl border border-hairline bg-canvas shadow-card;
+  }
+  /* Theme-aware dotted backdrop used behind orbs + QR previews. */
+  .dotgrid {
+    background-image: radial-gradient(rgb(var(--faint) / 0.5) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+  .field-label {
+    @apply mb-1.5 block text-[13px] font-semibold tracking-tight text-ink;
+  }
+  .field-hint {
+    @apply mt-1.5 text-[13px] leading-snug text-muted;
+  }
+  .field-error {
+    @apply mt-1.5 text-[13px] font-medium text-red-600 dark:text-red-400;
+  }
+  /* Serif display voice — emotive headlines only, never bolded. */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  /* Mono voice — uppercase technical labels, badges, data annotations. */
+  .mono-label {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+}
+
+/* Deeper card shadow on dark surfaces. */
+.dark .card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* Contrast band — the backdrop melts into the page canvas (black in dark
+   mode) while boxes inside render grey. Cards lift, navbar still reads. */
+.band-contrast {
+  --canvas: 232 233 237;
+}
+.dark .band-contrast,
+:root[data-theme="dark"] .band-contrast {
+  --canvas: 26 27 32;
+}
+
+/* thin scrollbars for panels */
+/* Custom cursor takes over on precise pointers; text fields keep I-beam. */
+@media (pointer: fine) {
+  body.cursor-custom,
+  body.cursor-custom a,
+  body.cursor-custom button,
+  body.cursor-custom select,
+  body.cursor-custom label,
+  body.cursor-custom [role="tab"] {
+    cursor: none;
+  }
+}
+.nice-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.nice-scroll::-webkit-scrollbar-thumb {
+  background: rgb(var(--faint) / 0.6);
+  border-radius: 99px;
+}
+
+/* focus visibility */
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* Feature marquee: seamless loop, pauses on hover. */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 36s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}

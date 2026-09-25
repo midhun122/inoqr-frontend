@@ -25,9 +25,15 @@ export function Navbar() {
             <NavLink to="/create/dynamic" className={linkCls}>
               Dynamic QR
             </NavLink>
-            <NavLink to="/signin" className={linkCls}>
-              Sign in
-            </NavLink>
+            {user ? (
+              <Link to="/my-qrs">
+                My QRs
+              </Link>
+            ) : (
+              <Link to="/signin">
+                Sign in
+              </Link>
+            )}
           </nav>
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggle />

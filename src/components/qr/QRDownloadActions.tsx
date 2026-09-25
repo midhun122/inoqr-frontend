@@ -1,6 +1,7 @@
 import { Check, Copy, Download } from "lucide-react";
 import { useState } from "react";
 import { copyText, downloadPngFromSvg, downloadSvg } from "../../lib/qr-export";
+import { recordStaticEntry } from "../../services/static-history";
 import { Button } from "../ui/Button";
 
 export function QRDownloadActions({
@@ -8,18 +9,28 @@ export function QRDownloadActions({
   value,
   bgColor,
   filenameBase = "inoqr",
+  history,
 }: {
   qrRef: React.RefObject<SVGSVGElement | null>;
   value: string;
   bgColor: string;
   filenameBase?: string;
+  /** When provided, exports/copies are recorded to the My QRs static history. */
+  history?: { kind: string; label: string; fgColor: string };
 }) {
   const [copied, setCopied] = useState(false);
   const disabled = !value.trim();
 
+  const remember = () => {
+    if (history && value.trim()) {
+      recordStaticEntry({ ...history, payload: value, bgColor });
+    }
+  };
+
   const onCopy = async () => {
     const ok = await copyText(value);
     if (ok) {
+      remember();
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     }
@@ -32,7 +43,10 @@ export function QRDownloadActions({
         size="sm"
         disabled={disabled}
         icon={<Download size={15} />}
-        onClick={() => downloadPngFromSvg(qrRef.current, `${filenameBase}.png`, 1024, bgColor)}
+        onClick={() => {
+          downloadPngFromSvg(qrRef.current, `${filenameBase}.png`, 1024, bgColor);
+          remember();
+        }}
       >
         PNG
       </Button>
@@ -41,7 +55,10 @@ export function QRDownloadActions({
         size="sm"
         disabled={disabled}
         icon={<Download size={15} />}
-        onClick={() => downloadSvg(qrRef.current, `${filenameBase}.svg`)}
+        onClick={() => {
+          downloadSvg(qrRef.current, `${filenameBase}.svg`);
+          remember();
+        }}
       >
         SVG
       </Button>

@@ -9,12 +9,22 @@ interface User {
 interface AuthCtx {
   user: User | null;
   signInWithGoogle: () => Promise<void>;
+  signInWithGitHub: () => Promise<void>;
   signOut: () => void;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
 const KEY = "inoqr-user";
+
+function persist(user: User | null): void {
+  try {
+    if (user) localStorage.setItem(KEY, JSON.stringify(user));
+    else localStorage.removeItem(KEY);
+  } catch {
+    /* storage blocked — demo keeps the user in memory only */
+  }
+}
 
 function load(): User | null {
   try {
@@ -36,16 +46,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: "ada@gmail.com",
       avatar: "AL",
     };
-    localStorage.setItem(KEY, JSON.stringify(mock));
+    persist(mock);
+    setUser(mock);
+  }, []);
+
+  const signInWithGitHub = useCallback(async () => {
+    // Mock GitHub OAuth — simulates network + profile fetch.
+    await new Promise((r) => setTimeout(r, 900));
+    const mock: User = {
+      name: "Ada Lovelace",
+      email: "ada@github.com",
+      avatar: "AL",
+    };
+    persist(mock);
     setUser(mock);
   }, []);
 
   const signOut = useCallback(() => {
-    localStorage.removeItem(KEY);
+    persist(null);
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, signInWithGoogle, signOut }), [user, signInWithGoogle, signOut]);
+  const value = useMemo(
+    () => ({ user, signInWithGoogle, signInWithGitHub, signOut }),
+    [user, signInWithGoogle, signInWithGitHub, signOut],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

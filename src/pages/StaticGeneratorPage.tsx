@@ -73,7 +73,17 @@ export function StaticGeneratorPage() {
             />
           </div>
           <div className="mt-4">
-            <QRDownloadActions qrRef={qrRef} value={hasError ? "" : payload} bgColor={form.bgColor} filenameBase={filename} />
+            <QRDownloadActions
+              qrRef={qrRef}
+              value={hasError ? "" : payload}
+              bgColor={form.bgColor}
+              filenameBase={filename}
+              history={{
+                kind: form.kind,
+                label: STATIC_KINDS.find((k) => k.id === form.kind)?.label ?? form.kind,
+                fgColor: form.fgColor,
+              }}
+            />
           </div>
           <p className="mt-4 rounded-md bg-canvas-soft p-3 text-[12px] leading-relaxed text-muted">
             Denser payloads scan slower. Keep URLs short and prefer error level M unless the code will be printed small or damaged.

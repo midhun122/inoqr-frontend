@@ -6,6 +6,7 @@ import { Navbar } from "./components/layout/Navbar";
 import { CustomCursor } from "./components/motion/CustomCursor";
 import { DynamicGeneratorPage } from "./pages/DynamicGeneratorPage";
 import { LandingPage } from "./pages/LandingPage";
+import { MyQRsPage } from "./pages/MyQRsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SignInPage } from "./pages/SignInPage";
 import { StaticGeneratorPage } from "./pages/StaticGeneratorPage";
@@ -48,6 +49,7 @@ function AnimatedRoutes() {
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/create/static" element={<StaticGeneratorPage />} />
           <Route path="/create/dynamic" element={<DynamicGeneratorPage />} />
+          <Route path="/my-qrs" element={<MyQRsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </motion.div>

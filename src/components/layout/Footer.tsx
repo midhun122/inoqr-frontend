@@ -4,8 +4,8 @@ import { Logo } from "../ui/Logo";
 export function Footer() {
   return (
     <footer className="border-t border-hairline bg-canvas">
-      <div className="shell grid gap-8 py-12 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
-        <div>
+      <div className="shell flex flex-col gap-8 py-12 md:flex-row md:justify-between">
+        <div className="md:max-w-[300px]">
           <Logo large />
           <p className="mt-3 max-w-[280px] text-[14px] leading-relaxed text-muted">
             A calm, precise QR studio. Static codes instantly, dynamic codes you can edit and measure.

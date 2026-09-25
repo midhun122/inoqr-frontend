@@ -26,13 +26,13 @@ export function Navbar() {
               Dynamic QR
             </NavLink>
             {user ? (
-              <Link to="/my-qrs">
+              <NavLink to="/my-qrs" className={linkCls}>
                 My QRs
-              </Link>
+              </NavLink>
             ) : (
-              <Link to="/signin">
+              <NavLink to="/signin" className={linkCls}>
                 Sign in
-              </Link>
+              </NavLink>
             )}
           </nav>
           <div className="flex shrink-0 items-center gap-2">
@@ -67,7 +67,11 @@ export function Navbar() {
         <div className="flex items-center gap-1 overflow-x-auto border-t border-hairline px-3 py-2 text-[13px] font-medium text-muted md:hidden">
           <NavLink to="/create/static" className="whitespace-nowrap rounded-full px-3 py-1.5">Static QR</NavLink>
           <NavLink to="/create/dynamic" className="whitespace-nowrap rounded-full px-3 py-1.5">Dynamic QR</NavLink>
-          <NavLink to="/signin" className="whitespace-nowrap rounded-full px-3 py-1.5">Sign in</NavLink>
+          {user ? (
+            <NavLink to="/my-qrs" className="whitespace-nowrap rounded-full px-3 py-1.5">My QRs</NavLink>
+          ) : (
+            <NavLink to="/signin" className="whitespace-nowrap rounded-full px-3 py-1.5">Sign in</NavLink>
+          )}
         </div>
       </header>
     </div>

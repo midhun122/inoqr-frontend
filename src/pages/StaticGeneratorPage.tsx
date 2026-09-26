@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GeneratorLayout } from "../components/layout/GeneratorLayout";
 import { QRDownloadActions } from "../components/qr/QRDownloadActions";
 import { QRPreview } from "../components/qr/QRPreview";
@@ -24,13 +24,22 @@ export function StaticGeneratorPage() {
   const hasError = Object.keys(errors).length > 0;
   const info = payloadCharInfo(payload);
 
-  // Orb shows briefly while the user is typing (debounce), then QR crossfades in.
+  // Orb spins a 1s beat on every customization, then QR crossfades in.
   const signature = useMemo(
     () => JSON.stringify([form.kind, payload, form.fgColor, form.bgColor]),
     [form.kind, payload, form.fgColor, form.bgColor],
   );
   const { value: settledSig, debouncing } = useDebouncedValue(signature, 550);
-  const thinking = debouncing || signature !== settledSig;
+  const [showcaseThinking, setShowcaseThinking] = useState(false);
+  const sigRef = useRef(signature);
+  useEffect(() => {
+    if (sigRef.current === signature) return;
+    sigRef.current = signature;
+    setShowcaseThinking(true);
+    const t = window.setTimeout(() => setShowcaseThinking(false), 1000);
+    return () => window.clearTimeout(t);
+  }, [signature]);
+  const thinking = debouncing || signature !== settledSig || showcaseThinking;
 
   const filename = useMemo(() => `inoqr-static-${form.kind}`, [form.kind]);
 

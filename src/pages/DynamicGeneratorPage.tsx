@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { GeneratorLayout } from "../components/layout/GeneratorLayout";
 import { QRDownloadActions } from "../components/qr/QRDownloadActions";
@@ -33,8 +33,19 @@ export function DynamicGeneratorPage() {
   }, [editingId, links]);
 
   const previewValue = activeTarget ? shortUrl(activeTarget.slug) : shortUrl(slugify(slug) || "link");
-  const { value: settled, debouncing } = useDebouncedValue(previewValue + destination + (editingId ?? "new"), 550);
-  const thinking = debouncing;
+  const previewSig = previewValue + destination + (editingId ?? "new");
+  const { value: settled, debouncing } = useDebouncedValue(previewSig, 550);
+  // Orb spins a 1s beat on every change, matching the static studio.
+  const [showcaseThinking, setShowcaseThinking] = useState(false);
+  const sigRef = useRef(previewSig);
+  useEffect(() => {
+    if (sigRef.current === previewSig) return;
+    sigRef.current = previewSig;
+    setShowcaseThinking(true);
+    const t = window.setTimeout(() => setShowcaseThinking(false), 1000);
+    return () => window.clearTimeout(t);
+  }, [previewSig]);
+  const thinking = debouncing || previewSig !== settled || showcaseThinking;
 
   const createLink = () => {
     const cleanSlug = slugify(slug);

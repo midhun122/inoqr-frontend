@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Footer } from "./components/layout/Footer";
 import { Navbar } from "./components/layout/Navbar";
 import { CustomCursor } from "./components/motion/CustomCursor";
+import { ContributorsPage } from "./pages/ContributorsPage";
 import { DynamicGeneratorPage } from "./pages/DynamicGeneratorPage";
 import { LandingPage } from "./pages/LandingPage";
 import { MyQRsPage } from "./pages/MyQRsPage";
@@ -49,6 +50,7 @@ function AnimatedRoutes() {
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/create/static" element={<StaticGeneratorPage />} />
           <Route path="/create/dynamic" element={<DynamicGeneratorPage />} />
+          <Route path="/contributors" element={<ContributorsPage />} />
           <Route path="/my-qrs" element={<MyQRsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

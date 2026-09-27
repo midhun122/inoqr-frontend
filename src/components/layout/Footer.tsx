@@ -16,6 +16,7 @@ export function Footer() {
           <ul className="mt-3 space-y-2 text-[14px] text-muted">
             <li><Link className="hover:text-ink" to="/create/static">Static QR</Link></li>
             <li><Link className="hover:text-ink" to="/create/dynamic">Dynamic QR</Link></li>
+            <li><Link className="hover:text-ink" to="/contributors">Contributors</Link></li>
             <li><Link className="hover:text-ink" to="/signin">Sign in</Link></li>
           </ul>
         </div>

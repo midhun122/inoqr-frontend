@@ -1,30 +1,40 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { QRCodeSVG } from "qrcode.react";
-import { useRef } from "react";
+import { useMemo, type Ref } from "react";
+import { buildStyledQR, PREVIEW_QR_SIZE } from "../../lib/qr-style";
+import type { QREyeArt } from "../../lib/qr-art";
+import type { QRCustomization } from "../../types";
 import { ThinkingOrb } from "../motion/ThinkingOrb";
+import { StyledQRCode, type QRMotif, type StyledQRExportHandle } from "./StyledQRCode";
 
 export function QRPreview({
   value,
-  fgColor,
-  bgColor,
+  customization,
+  logoImage,
+  motif,
+  eyes,
   thinking,
   emptyHint = "Enter content to preview your QR",
-  qrRef,
-  size = 232,
+  qrApiRef,
+  size = PREVIEW_QR_SIZE,
 }: {
   value: string;
-  fgColor: string;
-  bgColor: string;
+  customization: QRCustomization;
+  logoImage: string | null;
+  motif: QRMotif | null;
+  eyes: QREyeArt | null;
   thinking: boolean;
   emptyHint?: string;
-  qrRef: React.RefObject<SVGSVGElement | null>;
+  qrApiRef: Ref<StyledQRExportHandle>;
   size?: number;
 }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
   const showQR = !thinking && value.trim().length > 0;
+  const options = useMemo(
+    () => buildStyledQR(value, customization, logoImage, size).options,
+    [value, customization, logoImage, size],
+  );
 
   return (
-    <div ref={wrapRef} className="relative grid min-h-[320px] place-items-center overflow-hidden rounded-xl bg-canvas-soft p-8">
+    <div className="relative grid min-h-[320px] place-items-center overflow-hidden rounded-xl bg-canvas-soft p-8">
       {/* dotted backdrop */}
       <div aria-hidden className="dotgrid pointer-events-none absolute inset-0 opacity-60" />
       <AnimatePresence mode="wait">
@@ -48,15 +58,7 @@ export function QRPreview({
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="relative rounded-lg bg-white p-4 shadow-card ring-1 ring-black/5 dark:ring-white/25"
           >
-            <QRCodeSVG
-              ref={qrRef as never}
-              value={value}
-              size={size}
-              fgColor={fgColor}
-              bgColor={bgColor}
-              level="M"
-              marginSize={2}
-            />
+            <StyledQRCode ref={qrApiRef} value={value} options={options} motif={motif} eyes={eyes} />
           </motion.div>
         ) : (
           <motion.p

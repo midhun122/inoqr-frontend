@@ -25,11 +25,6 @@ export const DEFAULT_STATIC_FORM: StaticFormState = {
   emailBody: "Sent via INOQR",
   smsNumber: "+15550102030",
   smsBody: "Hello from INOQR",
-  fgColor: "#141414",
-  bgColor: "#FFFFFF",
-  size: 640,
-  margin: 2,
-  ecLevel: "M",
 };
 
 function escapeWifi(v: string): string {

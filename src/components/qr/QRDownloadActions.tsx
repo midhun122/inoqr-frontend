@@ -1,29 +1,51 @@
 import { Check, Copy, Download } from "lucide-react";
-import { useState } from "react";
-import { copyText, downloadPngFromSvg, downloadSvg } from "../../lib/qr-export";
+import { useState, type Ref } from "react";
+import { copyText } from "../../lib/qr-export";
 import { recordStaticEntry } from "../../services/static-history";
+import type { QRCustomization } from "../../types";
 import { Button } from "../ui/Button";
+import type { StyledQRExportHandle } from "./StyledQRCode";
 
 export function QRDownloadActions({
-  qrRef,
   value,
-  bgColor,
   filenameBase = "inoqr",
+  qrApiRef,
   history,
 }: {
-  qrRef: React.RefObject<SVGSVGElement | null>;
   value: string;
-  bgColor: string;
   filenameBase?: string;
+  qrApiRef: Ref<StyledQRExportHandle>;
   /** When provided, exports/copies are recorded to the My QRs static history. */
-  history?: { kind: string; label: string; fgColor: string };
+  history?: { kind: string; label: string; custom: QRCustomization };
 }) {
   const [copied, setCopied] = useState(false);
-  const disabled = !value.trim();
+  const [busy, setBusy] = useState(false);
+  const disabled = !value.trim() || busy;
 
   const remember = () => {
     if (history && value.trim()) {
-      recordStaticEntry({ ...history, payload: value, bgColor });
+      recordStaticEntry({
+        kind: history.kind,
+        label: history.label,
+        payload: value,
+        fgColor: history.custom.foregroundColor,
+        bgColor: history.custom.backgroundColor,
+        custom: history.custom,
+      });
+    }
+  };
+
+  const runExport = async (kind: "png" | "svg") => {
+    const api =
+      qrApiRef && typeof qrApiRef === "object" ? qrApiRef.current : null;
+    if (!api || !value.trim()) return;
+    setBusy(true);
+    try {
+      if (kind === "png") await api.downloadPNG(filenameBase);
+      else await api.downloadSVG(filenameBase);
+      remember();
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -43,10 +65,7 @@ export function QRDownloadActions({
         size="sm"
         disabled={disabled}
         icon={<Download size={15} />}
-        onClick={() => {
-          downloadPngFromSvg(qrRef.current, `${filenameBase}.png`, 1024, bgColor);
-          remember();
-        }}
+        onClick={() => void runExport("png")}
       >
         PNG
       </Button>
@@ -55,10 +74,7 @@ export function QRDownloadActions({
         size="sm"
         disabled={disabled}
         icon={<Download size={15} />}
-        onClick={() => {
-          downloadSvg(qrRef.current, `${filenameBase}.svg`);
-          remember();
-        }}
+        onClick={() => void runExport("svg")}
       >
         SVG
       </Button>

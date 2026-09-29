@@ -1,21 +1,35 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GeneratorLayout } from "../components/layout/GeneratorLayout";
+import { CustomizePanel } from "../components/qr/CustomizePanel";
 import { QRDownloadActions } from "../components/qr/QRDownloadActions";
 import { QRPreview } from "../components/qr/QRPreview";
+import type { QRMotif, StyledQRExportHandle } from "../components/qr/StyledQRCode";
 import { Button } from "../components/ui/Button";
 import { FieldError, Input, Textarea } from "../components/ui/Input";
 import { Pill, SegmentedControl } from "../components/ui/Primitives";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { glyphOnWhiteTile } from "../lib/qr-color";
 import { buildStaticPayload, DEFAULT_STATIC_FORM, payloadCharInfo, STATIC_KINDS, validateStaticForm } from "../lib/qr-encode";
-import type { StaticFormState } from "../types";
+import { builtinLogoDataUrl } from "../lib/qr-logos";
+import { motifInner } from "../lib/qr-motifs";
+import { resolveEyeArt, type QREyeArt } from "../lib/qr-art";
+import { customizationKey, isLogoActive } from "../lib/qr-style";
+import type { QRCustomization, StaticFormState } from "../types";
+import { DEFAULT_QR_CUSTOMIZATION } from "../types";
 
 export function StaticGeneratorPage() {
   const [form, setForm] = useState<StaticFormState>(DEFAULT_STATIC_FORM);
   const [touched, setTouched] = useState(false);
-  const qrRef = useRef<SVGSVGElement | null>(null);
+  const [custom, setCustom] = useState<QRCustomization>(DEFAULT_QR_CUSTOMIZATION);
+  const qrApiRef = useRef<StyledQRExportHandle | null>(null);
 
   const set = <K extends keyof StaticFormState>(k: K, v: StaticFormState[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
+    setTouched(true);
+  };
+
+  const patchCustom = (patch: Partial<QRCustomization>) => {
+    setCustom((c) => ({ ...c, ...patch }));
     setTouched(true);
   };
 
@@ -24,10 +38,27 @@ export function StaticGeneratorPage() {
   const hasError = Object.keys(errors).length > 0;
   const info = payloadCharInfo(payload);
 
+  // Resolved center logo (built-in tile, uploaded tile, or none).
+  const logoImage = useMemo(() => {
+    if (custom.logoType === "builtin" && custom.builtinLogo) {
+      return builtinLogoDataUrl(custom.builtinLogo, glyphOnWhiteTile(custom.foregroundColor));
+    }
+    if (custom.logoType === "upload") return custom.uploadedLogo;
+    return null;
+  }, [custom.logoType, custom.builtinLogo, custom.uploadedLogo, custom.foregroundColor]);
+
+  // Designer motif + hand-drawn eye artwork (null = engine rendering).
+  const motif = useMemo<QRMotif | null>(() => {
+    const inner = motifInner(custom.moduleMotif);
+    return inner ? { inner, color: custom.foregroundColor } : null;
+  }, [custom.moduleMotif, custom.foregroundColor]);
+  const eyes = useMemo<QREyeArt | null>(() => resolveEyeArt(custom), [custom]);
+
   // Orb spins a 1s beat on every customization, then QR crossfades in.
+  // Logo bytes stay out of the signature (uploads can be megabytes).
   const signature = useMemo(
-    () => JSON.stringify([form.kind, payload, form.fgColor, form.bgColor]),
-    [form.kind, payload, form.fgColor, form.bgColor],
+    () => JSON.stringify([form.kind, payload, customizationKey(custom, logoImage)]),
+    [form.kind, payload, custom, logoImage],
   );
   const { value: settledSig, debouncing } = useDebouncedValue(signature, 550);
   const [showcaseThinking, setShowcaseThinking] = useState(false);
@@ -47,7 +78,7 @@ export function StaticGeneratorPage() {
     <GeneratorLayout
       eyebrow="Static QR"
       title="Create a static QR code"
-      lede="Data is encoded directly into the pattern. It never expires and needs no account. Type, tune the style, export."
+      lede="Data is encoded directly into the pattern. It never expires and needs no account. Type, design, export."
       badge={
         <Pill tone={info.level === "ok" ? "neutral" : info.level === "warn" ? "warn" : "warn"}>
           {info.chars} chars
@@ -74,23 +105,24 @@ export function StaticGeneratorPage() {
           <div className="mt-3">
             <QRPreview
               value={hasError ? "" : payload}
-              fgColor={form.fgColor}
-              bgColor={form.bgColor}
+              customization={custom}
+              logoImage={logoImage}
+              motif={motif}
+              eyes={eyes}
               thinking={thinking && !hasError}
-              qrRef={qrRef}
+              qrApiRef={qrApiRef}
               emptyHint={hasError ? Object.values(errors)[0] : "Enter content to preview your QR"}
             />
           </div>
           <div className="mt-4">
             <QRDownloadActions
-              qrRef={qrRef}
               value={hasError ? "" : payload}
-              bgColor={form.bgColor}
               filenameBase={filename}
+              qrApiRef={qrApiRef}
               history={{
                 kind: form.kind,
                 label: STATIC_KINDS.find((k) => k.id === form.kind)?.label ?? form.kind,
-                fgColor: form.fgColor,
+                custom,
               }}
             />
           </div>
@@ -199,39 +231,22 @@ export function StaticGeneratorPage() {
         )}
       </div>
 
-      {/* STYLE */}
+      {/* CUSTOMIZE */}
       <div className="mt-8 border-t border-hairline pt-6">
-        <h2 className="text-[15px] font-bold tracking-tight">Style</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <div>
-            <label className="field-label" htmlFor="f-fg">Code color</label>
-            <div className="flex items-center gap-2">
-              <input id="f-fg" type="color" value={form.fgColor} onChange={(e) => set("fgColor", e.target.value)} className="h-input w-12 cursor-pointer rounded-md border border-hairline bg-canvas p-1" aria-label="QR foreground color" />
-              <Input value={form.fgColor} onChange={(e) => set("fgColor", e.target.value)} aria-label="Foreground hex" />
-            </div>
-          </div>
-          <div>
-            <label className="field-label" htmlFor="f-bg">Background</label>
-            <div className="flex items-center gap-2">
-              <input id="f-bg" type="color" value={form.bgColor} onChange={(e) => set("bgColor", e.target.value)} className="h-input w-12 cursor-pointer rounded-md border border-hairline bg-canvas p-1" aria-label="QR background color" />
-              <Input value={form.bgColor} onChange={(e) => set("bgColor", e.target.value)} aria-label="Background hex" />
-            </div>
-          </div>
-          <div>
-            <label className="field-label" htmlFor="f-ec">Error correction</label>
-            <select id="f-ec" className="h-input w-full rounded-md border border-hairline bg-canvas px-3 text-[14px]" value={form.ecLevel} onChange={(e) => set("ecLevel", e.target.value as never)}>
-              <option value="L">L — smallest</option>
-              <option value="M">M — balanced</option>
-              <option value="Q">Q — sturdy</option>
-              <option value="H">H — maximum</option>
-            </select>
-            <p className="field-hint">M suits most print + screen use.</p>
-          </div>
+        <h2 className="text-[15px] font-bold tracking-tight">Customize</h2>
+        <p className="field-hint">Every change updates the live preview.</p>
+        <div className="mt-4">
+          <CustomizePanel
+            value={custom}
+            onChange={patchCustom}
+            onReset={() => setCustom({ ...DEFAULT_QR_CUSTOMIZATION })}
+            ecBumped={isLogoActive(custom, logoImage) && custom.errorCorrection !== "H"}
+          />
         </div>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => { setForm(DEFAULT_STATIC_FORM); setTouched(false); }}>Reset</Button>
+        <Button variant="secondary" onClick={() => { setForm(DEFAULT_STATIC_FORM); setCustom({ ...DEFAULT_QR_CUSTOMIZATION }); setTouched(false); }}>Reset</Button>
       </div>
     </GeneratorLayout>
   );

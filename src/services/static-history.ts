@@ -1,3 +1,5 @@
+import type { QRCustomization } from "../types";
+
 export interface StaticHistoryEntry {
   id: string;
   kind: string;
@@ -5,6 +7,8 @@ export interface StaticHistoryEntry {
   payload: string;
   fgColor: string;
   bgColor: string;
+  /** Design snapshot — entries recorded before customization existed omit it. */
+  custom?: QRCustomization;
   createdAt: string;
 }
 

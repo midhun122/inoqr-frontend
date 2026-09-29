@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { GeneratorLayout } from "../components/layout/GeneratorLayout";
+import { CustomizePanel } from "../components/qr/CustomizePanel";
 import { QRDownloadActions } from "../components/qr/QRDownloadActions";
 import { QRPreview } from "../components/qr/QRPreview";
+import type { QRMotif, StyledQRExportHandle } from "../components/qr/StyledQRCode";
 import { Button } from "../components/ui/Button";
 import { FieldError, Input } from "../components/ui/Input";
 import { Pill } from "../components/ui/Primitives";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { glyphOnWhiteTile } from "../lib/qr-color";
+import { builtinLogoDataUrl } from "../lib/qr-logos";
+import { motifInner } from "../lib/qr-motifs";
+import { resolveEyeArt, type QREyeArt } from "../lib/qr-art";
+import { customizationKey, isLogoActive } from "../lib/qr-style";
 import { useAuth } from "../services/auth";
 import { loadLinks, saveLinks, shortUrl, slugify } from "../services/dynamic-store";
-import type { DynamicLink } from "../types";
+import type { DynamicLink, QRCustomization } from "../types";
+import { DEFAULT_QR_CUSTOMIZATION } from "../types";
 
 export function DynamicGeneratorPage() {
   const { user } = useAuth();
@@ -20,7 +28,8 @@ export function DynamicGeneratorPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDest, setEditDest] = useState("");
   const [formError, setFormError] = useState("");
-  const qrRef = useRef<SVGSVGElement | null>(null);
+  const [custom, setCustom] = useState<QRCustomization>(DEFAULT_QR_CUSTOMIZATION);
+  const qrApiRef = useRef<StyledQRExportHandle | null>(null);
 
   const persist = (next: DynamicLink[]) => {
     setLinks(next);
@@ -33,7 +42,24 @@ export function DynamicGeneratorPage() {
   }, [editingId, links]);
 
   const previewValue = activeTarget ? shortUrl(activeTarget.slug) : shortUrl(slugify(slug) || "link");
-  const previewSig = previewValue + destination + (editingId ?? "new");
+
+  // Resolved center logo (built-in tile, uploaded tile, or none).
+  const logoImage = useMemo(() => {
+    if (custom.logoType === "builtin" && custom.builtinLogo) {
+      return builtinLogoDataUrl(custom.builtinLogo, glyphOnWhiteTile(custom.foregroundColor));
+    }
+    if (custom.logoType === "upload") return custom.uploadedLogo;
+    return null;
+  }, [custom.logoType, custom.builtinLogo, custom.uploadedLogo, custom.foregroundColor]);
+
+  // Designer motif + hand-drawn eye artwork (null = engine rendering).
+  const motif = useMemo<QRMotif | null>(() => {
+    const inner = motifInner(custom.moduleMotif);
+    return inner ? { inner, color: custom.foregroundColor } : null;
+  }, [custom.moduleMotif, custom.foregroundColor]);
+  const eyes = useMemo<QREyeArt | null>(() => resolveEyeArt(custom), [custom]);
+
+  const previewSig = previewValue + destination + (editingId ?? "new") + customizationKey(custom, logoImage);
   const { value: settled, debouncing } = useDebouncedValue(previewSig, 550);
   // Orb spins a 1s beat on every change, matching the static studio.
   const [showcaseThinking, setShowcaseThinking] = useState(false);
@@ -86,15 +112,15 @@ export function DynamicGeneratorPage() {
         sidebar={
           <div>
             <h2 className="text-[15px] font-bold">Preview</h2>
-            <div className="mt-3"><QRPreview value="" fgColor="#141414" bgColor="#FFFFFF" thinking={false} qrRef={qrRef} emptyHint="Sign in to preview your dynamic QR" /></div>
+            <div className="mt-3"><QRPreview value="" customization={DEFAULT_QR_CUSTOMIZATION} logoImage={null} motif={null} eyes={null} thinking={false} qrApiRef={qrApiRef} emptyHint="Sign in to preview your dynamic QR" /></div>
           </div>
         }
       >
         <div className="rounded-md border border-hairline bg-canvas-soft p-6 text-center">
-          <Pill tone="accent">Google sign-in required</Pill>
+          <Pill tone="accent">Sign-in required</Pill>
           <p className="mx-auto mt-3 max-w-[380px] text-[14px] text-muted">Static QR works without an account. Dynamic adds editing + analytics.</p>
           <div className="mt-5 flex justify-center gap-2">
-            <Link to="/signin"><Button variant="accent">Sign in with Google</Button></Link>
+            <Link to="/signin"><Button variant="accent">Sign in</Button></Link>
             <Link to="/create/static"><Button variant="secondary">Use static instead</Button></Link>
           </div>
         </div>
@@ -127,11 +153,11 @@ export function DynamicGeneratorPage() {
             </span>
           </div>
           <div className="mt-3">
-            <QRPreview value={previewValue} fgColor="#141414" bgColor="#FFFFFF" thinking={thinking} qrRef={qrRef} />
+            <QRPreview value={previewValue} customization={custom} logoImage={logoImage} motif={motif} eyes={eyes} thinking={thinking} qrApiRef={qrApiRef} />
           </div>
           <p className="mt-3 break-all rounded-md bg-canvas-soft p-3 text-[13px] font-medium">{previewValue}</p>
           <div className="mt-3">
-            <QRDownloadActions qrRef={qrRef} value={previewValue} bgColor="#FFFFFF" filenameBase={`inoqr-dynamic-${activeTarget?.slug ?? "link"}`} />
+            <QRDownloadActions value={previewValue} qrApiRef={qrApiRef} filenameBase={`inoqr-dynamic-${activeTarget?.slug ?? "link"}`} />
           </div>
         </div>
       }
@@ -156,6 +182,20 @@ export function DynamicGeneratorPage() {
       <FieldError message={formError || undefined} />
       <div className="mt-4">
         <Button variant="accent" onClick={createLink}>Create dynamic link</Button>
+      </div>
+
+      {/* CUSTOMIZE */}
+      <div className="mt-8 border-t border-hairline pt-6">
+        <h2 className="text-[15px] font-bold tracking-tight">Customize</h2>
+        <p className="field-hint">Design applies to the preview and every export.</p>
+        <div className="mt-4">
+          <CustomizePanel
+            value={custom}
+            onChange={(patch) => setCustom((c) => ({ ...c, ...patch }))}
+            onReset={() => setCustom({ ...DEFAULT_QR_CUSTOMIZATION })}
+            ecBumped={isLogoActive(custom, logoImage) && custom.errorCorrection !== "H"}
+          />
+        </div>
       </div>
 
       {/* LIST */}

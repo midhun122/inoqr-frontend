@@ -1,14 +1,20 @@
 import { ArrowRight, Link2, QrCode, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
 import { MotionReveal } from "../components/motion/MotionReveal";
+import { StyledQRCode, type QRMotif } from "../components/qr/StyledQRCode";
 import { Button } from "../components/ui/Button";
 import { Pill } from "../components/ui/Primitives";
+import { glyphOnWhiteTile } from "../lib/qr-color";
+import { builtinLogoDataUrl } from "../lib/qr-logos";
+import { motifInner } from "../lib/qr-motifs";
+import { resolveEyeArt } from "../lib/qr-art";
+import { buildStyledQR } from "../lib/qr-style";
 import { useAuth } from "../services/auth";
 import { loadLinks, saveLinks, shortUrl } from "../services/dynamic-store";
-import { loadStaticHistory, removeStaticEntry } from "../services/static-history";
+import { loadStaticHistory, removeStaticEntry, type StaticHistoryEntry } from "../services/static-history";
 import type { DynamicLink } from "../types";
+import { DEFAULT_QR_CUSTOMIZATION } from "../types";
 
 function fmtDate(iso: string): string {
   try {
@@ -22,8 +28,33 @@ function fmtDate(iso: string): string {
   }
 }
 
-export function MyQRsPage() {
-  const { user } = useAuth();
+/** Dashboard preview — re-renders the saved design snapshot. */
+function EntryQR({ entry }: { entry: StaticHistoryEntry }) {
+  const custom = entry.custom ?? {
+    ...DEFAULT_QR_CUSTOMIZATION,
+    foregroundColor: entry.fgColor,
+    backgroundColor: entry.bgColor,
+  };
+  const logoImage =
+    custom.logoType === "builtin" && custom.builtinLogo
+      ? builtinLogoDataUrl(custom.builtinLogo, glyphOnWhiteTile(custom.foregroundColor))
+      : custom.logoType === "upload"
+        ? custom.uploadedLogo
+        : null;
+  const motif: QRMotif | null = (() => {
+    const inner = motifInner(custom.moduleMotif);
+    return inner ? { inner, color: custom.foregroundColor } : null;
+  })();
+  const eyes = resolveEyeArt(custom);
+  const options = useMemo(
+    () => buildStyledQR(entry.payload, custom, logoImage, 120).options,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entry.id],
+  );
+  return <StyledQRCode value={entry.payload} options={options} motif={motif} eyes={eyes} />;
+}
+
+export function MyQRsPage() {  const { user } = useAuth();
   const [tab, setTab] = useState<"static" | "dynamic">("static");
   const [staticEntries, setStaticEntries] = useState(() => loadStaticHistory());
   const [links, setLinks] = useState<DynamicLink[]>(() => loadLinks());
@@ -111,7 +142,7 @@ export function MyQRsPage() {
                       </button>
                     </div>
                     <div className="mx-auto mt-4 rounded-lg bg-white p-3 shadow-card ring-1 ring-black/5 dark:ring-white/25">
-                      <QRCodeSVG value={e.payload} size={120} fgColor={e.fgColor} bgColor={e.bgColor} level="M" marginSize={1} />
+                      <EntryQR entry={e} />
                     </div>
                     <p className="mt-4 truncate text-[13px] text-muted" title={e.payload}>{e.payload}</p>
                     <p className="mt-1 text-[12px] font-medium text-faint">{fmtDate(e.createdAt)}</p>

@@ -36,7 +36,7 @@ export const contributorGroups: ContributorGroup[] = [
     label: "Backend",
     members: [
       {
-        name: "Aditya S Pai",
+        name: "Adithya S Pai",
         role: "Backend Developer",
         portfolio: "",
         github: "https://github.com/frizzycodes",
